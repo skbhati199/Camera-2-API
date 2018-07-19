@@ -262,7 +262,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        file = File(activity.getExternalFilesDir(null), PIC_FILE_NAME)
+        file = File(activity?.getExternalFilesDir(null), PIC_FILE_NAME)
     }
 
     override fun onResume() {
@@ -314,7 +314,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
      * @param height The height of available size for camera preview
      */
     private fun setUpCameraOutputs(width: Int, height: Int) {
-        val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = activity?.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             for (cameraId in manager.cameraIdList) {
                 val characteristics = manager.getCameraCharacteristics(cameraId)
@@ -340,13 +340,13 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
-                val displayRotation = activity.windowManager.defaultDisplay.rotation
+                val displayRotation = activity?.windowManager?.defaultDisplay?.rotation
 
                 sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
                 val swappedDimensions = areDimensionsSwapped(displayRotation)
 
                 val displaySize = Point()
-                activity.windowManager.defaultDisplay.getSize(displaySize)
+                activity?.windowManager?.defaultDisplay?.getSize(displaySize)
                 val rotatedPreviewWidth = if (swappedDimensions) height else width
                 val rotatedPreviewHeight = if (swappedDimensions) width else height
                 var maxPreviewWidth = if (swappedDimensions) displaySize.y else displaySize.x
@@ -398,7 +398,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
      *
      * @return true if the dimensions are swapped, false otherwise.
      */
-    private fun areDimensionsSwapped(displayRotation: Int): Boolean {
+    private fun areDimensionsSwapped(displayRotation: Int?): Boolean {
         var swappedDimensions = false
         when (displayRotation) {
             Surface.ROTATION_0, Surface.ROTATION_180 -> {
@@ -422,14 +422,14 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
      * Opens the camera specified by [Camera2BasicFragment.cameraId].
      */
     private fun openCamera(width: Int, height: Int) {
-        val permission = ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA)
+        val permission = ContextCompat.checkSelfPermission(activity?.baseContext!!, Manifest.permission.CAMERA)
         if (permission != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission()
             return
         }
         setUpCameraOutputs(width, height)
         configureTransform(width, height)
-        val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = activity?.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             // Wait for camera to open - 2.5 seconds is sufficient
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
@@ -533,7 +533,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
                         }
 
                         override fun onConfigureFailed(session: CameraCaptureSession) {
-                            activity.showToast("Failed")
+                            activity?.showToast("Failed")
                         }
                     }, null)
         } catch (e: CameraAccessException) {
@@ -552,7 +552,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
      */
     private fun configureTransform(viewWidth: Int, viewHeight: Int) {
         activity ?: return
-        val rotation = activity.windowManager.defaultDisplay.rotation
+        val rotation = activity?.windowManager?.defaultDisplay?.rotation
         val matrix = Matrix()
         val viewRect = RectF(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val bufferRect = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
@@ -619,7 +619,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
     private fun captureStillPicture() {
         try {
             if (activity == null || cameraDevice == null) return
-            val rotation = activity.windowManager.defaultDisplay.rotation
+            val rotation = activity?.windowManager?.defaultDisplay?.rotation
 
             // This is the CaptureRequest.Builder that we use to take a picture.
             val captureBuilder = cameraDevice?.createCaptureRequest(
@@ -630,6 +630,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
                 // We have to take that into account and rotate JPEG properly.
                 // For devices with orientation of 90, we return our mapping from ORIENTATIONS.
                 // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
+                if (rotation != null)
                 set(CaptureRequest.JPEG_ORIENTATION,
                         (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360)
 
@@ -643,7 +644,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
                 override fun onCaptureCompleted(session: CameraCaptureSession,
                         request: CaptureRequest,
                         result: TotalCaptureResult) {
-                    activity.showToast("Saved: $file")
+                    activity?.showToast("Saved: $file")
                     Log.d(TAG, file.toString())
                     unlockFocus()
                 }
